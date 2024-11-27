@@ -83,8 +83,10 @@ export const SpeechProvider = ({ children }) => {
   };
 
   const tts = async (message) => {
+    console.log('tts function called with message:', message);
     setLoading(true);
     try {
+      console.log('Sending TTS request to backend');
       const data = await fetch(`${backendUrl}/tts`, {
         method: "POST",
         headers: {
@@ -93,9 +95,10 @@ export const SpeechProvider = ({ children }) => {
         body: JSON.stringify({ message }),
       });
       const response = (await data.json()).messages;
+      console.log('Received TTS response:', response);
       setMessages((messages) => [...messages, ...response]);
     } catch (error) {
-      console.error(error);
+      console.error('TTS request failed:', error);
     } finally {
       setLoading(false);
     }

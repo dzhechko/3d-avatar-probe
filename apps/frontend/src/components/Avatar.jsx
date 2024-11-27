@@ -16,6 +16,25 @@ export function Avatar(props) {
   const [lipsync, setLipsync] = useState();
   const [setupMode, setSetupMode] = useState(false);
 
+  // Verify morph targets on load
+  useEffect(() => {
+    const head = scene.getObjectByName("Wolf3D_Head");
+    if (head && head.morphTargetDictionary) {
+      console.log('Available morph targets:', Object.keys(head.morphTargetDictionary));
+      
+      // Check for required targets
+      const missingTargets = morphTargets.filter(
+        target => !head.morphTargetDictionary[target]
+      );
+      
+      if (missingTargets.length > 0) {
+        console.warn('Missing required morph targets:', missingTargets);
+      } else {
+        console.log('All required morph targets are present!');
+      }
+    }
+  }, [scene]);
+
   useEffect(() => {
     if (!message) {
       setAnimation("Idle");

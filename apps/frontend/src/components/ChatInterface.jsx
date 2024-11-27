@@ -1,9 +1,30 @@
-import { useRef } from "react";
+import { useRef, useEffect, useState } from "react";
 import { useSpeech } from "../hooks/useSpeech";
 
 export const ChatInterface = ({ hidden, ...props }) => {
   const input = useRef();
   const { tts, loading, message, startRecording, stopRecording, recording } = useSpeech();
+  const [hasGreeted, setHasGreeted] = useState(false);
+
+  // Auto-greeting on component mount
+  useEffect(() => {
+    console.log('ChatInterface useEffect triggered with state:', {
+      loading,
+      message,
+      hasGreeted,
+      componentId: Math.random() // добавляем уникальный ID для отслеживания монтирования
+    });
+
+    if (!loading && !message && !hasGreeted) {
+      console.log('Conditions met for greeting, setting hasGreeted to true');
+      setHasGreeted(true);
+      // Small delay to ensure everything is loaded
+      setTimeout(() => {
+        console.log('Sending empty greeting message to trigger TTS');
+        tts("");  // Empty string will trigger default greeting
+      }, 1000);
+    }
+  }, [loading, message, hasGreeted]);
 
   const sendMessage = () => {
     const text = input.current.value;
@@ -19,9 +40,9 @@ export const ChatInterface = ({ hidden, ...props }) => {
   return (
     <div className="fixed top-0 left-0 right-0 bottom-0 z-10 flex justify-between p-4 flex-col pointer-events-none">
       <div className="self-start backdrop-blur-md bg-white bg-opacity-50 p-4 rounded-lg">
-        <h1 className="font-black text-xl text-gray-700">Digital Human</h1>
+        <h1 className="font-black text-xl text-gray-700">Алекс - Владелец IT-стартапа</h1>
         <p className="text-gray-600">
-          {loading ? "Loading..." : "Type a message and press enter to chat with the AI."}
+          {loading ? "Загрузка..." : "Общайтесь с Алексом о курсах Product University"}
         </p>
       </div>
       <div className="w-full flex flex-col items-end justify-center gap-4"></div>
@@ -50,7 +71,7 @@ export const ChatInterface = ({ hidden, ...props }) => {
 
         <input
           className="w-full placeholder:text-gray-800 placeholder:italic p-4 rounded-md bg-opacity-50 bg-white backdrop-blur-md"
-          placeholder="Type a message..."
+          placeholder="Введите сообщение..."
           ref={input}
           onKeyDown={(e) => {
             if (e.key === "Enter") {
@@ -65,7 +86,7 @@ export const ChatInterface = ({ hidden, ...props }) => {
             loading || message ? "cursor-not-allowed opacity-30" : ""
           }`}
         >
-          Send
+          Отправить
         </button>
       </div>
     </div>

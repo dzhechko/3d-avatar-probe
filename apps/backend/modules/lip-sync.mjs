@@ -1,49 +1,50 @@
 import { convertTextToSpeech } from "./elevenLabs.mjs";
 import { getPhonemes } from "./rhubarbLipSync.mjs";
 import { readJsonTranscript, audioFileToBase64 } from "../utils/files.mjs";
-
-const MAX_RETRIES = 10;
-const RETRY_DELAY = 0;
-
-const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+import fs from 'fs';
+import path from 'path';
 
 const lipSync = async ({ messages }) => {
-  await Promise.all(
-    messages.map(async (message, index) => {
-      const fileName = `audios/message_${index}.mp3`;
+  try {
+    // Ensure audios directory exists
+    const audiosDir = path.join(process.cwd(), 'audios');
+    if (!fs.existsSync(audiosDir)) {
+      fs.mkdirSync(audiosDir, { recursive: true });
+    }
 
-      for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+    await Promise.all(
+      messages.map(async (message, index) => {
         try {
+          const fileName = path.join('audios', `message_${index}.mp3`);
+          console.log(`Processing message ${index}:`, message.text);
+
+          // Generate speech
           await convertTextToSpeech({ text: message.text, fileName });
-          await delay(RETRY_DELAY);
-          break;
+          console.log(`Speech generated for message ${index}`);
+
+          // Generate lip sync
+          await getPhonemes({ message: index });
+          console.log(`Lip sync generated for message ${index}`);
+
+          // Read generated files
+          message.audio = await audioFileToBase64({ fileName });
+          message.lipsync = await readJsonTranscript({ 
+            fileName: fileName.replace('.mp3', '.json')
+          });
+
+          console.log(`Message ${index} processing complete`);
         } catch (error) {
-          if (error.response && error.response.status === 429 && attempt < MAX_RETRIES - 1) {
-            await delay(RETRY_DELAY);
-          } else {
-            throw error;
-          }
+          console.error(`Error processing message ${index}:`, error);
+          // Don't throw here, continue with other messages
         }
-      }
-      console.log(`Message ${index} converted to speech`);
-    })
-  );
+      })
+    );
 
-  await Promise.all(
-    messages.map(async (message, index) => {
-      const fileName = `audios/message_${index}.mp3`;
-
-      try {
-        await getPhonemes({ message: index });
-        message.audio = await audioFileToBase64({ fileName });
-        message.lipsync = await readJsonTranscript({ fileName: `audios/message_${index}.json` });
-      } catch (error) {
-        console.error(`Error while getting phonemes for message ${index}:`, error);
-      }
-    })
-  );
-
-  return messages;
+    return messages;
+  } catch (error) {
+    console.error('Error in lipSync:', error);
+    throw error;
+  }
 };
 
 export { lipSync };
