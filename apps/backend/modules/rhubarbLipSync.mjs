@@ -10,15 +10,25 @@ const getPhonemes = async ({ message }) => {
     // Get absolute paths
     const projectRoot = path.resolve(process.cwd(), '../../');
     const audiosDir = path.join(process.cwd(), 'audios');
-    const inputPath = path.join(audiosDir, `${message}.mp3`);
-    const outputWav = path.join(audiosDir, `${message}.wav`);
-    const outputJson = path.join(audiosDir, `${message}.json`);
-    const rhubarbPath = path.join(projectRoot, 'bin', 'rhubarb.exe');
-
-    // Verify rhubarb exists
-    if (!fs.existsSync(rhubarbPath)) {
-      throw new Error(`Rhubarb not found at ${rhubarbPath}`);
+    const inputPath = path.join(audiosDir, `message_${message}.mp3`);
+    const outputWav = path.join(audiosDir, `message_${message}.wav`);
+    const outputJson = path.join(audiosDir, `message_${message}.json`);
+    
+    // Определяем путь к rhubarb в зависимости от окружения
+    let rhubarbPath;
+    if (process.env.NODE_ENV === 'production' || process.env.DOCKER_ENV === 'true') {
+      // В контейнере предполагаем, что rhubarb доступен в PATH
+      rhubarbPath = 'rhubarb';
+    } else {
+      // Для локальной разработки используем путь из bin
+      rhubarbPath = path.join(projectRoot, 'bin', 'rhubarb.exe');
+      // Verify rhubarb exists
+      if (!fs.existsSync(rhubarbPath)) {
+        throw new Error(`Rhubarb not found at ${rhubarbPath}`);
+      }
     }
+    
+    console.log(`Using rhubarb at: ${rhubarbPath}`);
     
     // Convert MP3 to WAV
     await execCommand({
@@ -28,8 +38,15 @@ const getPhonemes = async ({ message }) => {
     
     // Generate lip sync data
     console.log('Running rhubarb from:', rhubarbPath);
+    
+    // Формируем команду с учетом типа ОС
+    const isWindows = process.platform === 'win32' || rhubarbPath.endsWith('.exe');
+    const rhubarbCmd = isWindows 
+      ? `"${rhubarbPath}" -f json -o "${outputJson}" "${outputWav}" -r phonetic`
+      : `${rhubarbPath} -f json -o "${outputJson}" "${outputWav}" -r phonetic`;
+      
     await execCommand({
-      command: `"${rhubarbPath}" -f json -o "${outputJson}" "${outputWav}" -r phonetic`
+      command: rhubarbCmd
     });
     
     // Clean up WAV file
@@ -51,7 +68,7 @@ const getPhonemes = async ({ message }) => {
       ]
     };
     
-    const outputJson = path.join(process.cwd(), 'audios', `${message}.json`);
+    const outputJson = path.join(process.cwd(), 'audios', `message_${message}.json`);
     fs.writeFileSync(outputJson, JSON.stringify(defaultJson, null, 2));
   }
 };

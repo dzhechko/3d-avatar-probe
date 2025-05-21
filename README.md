@@ -188,8 +188,53 @@ yarn add --dev -W <PACKAGE_NAME>
 yarn
 ```
 
-
 Open [http://localhost:5173/](http://localhost:5173/) with your browser to see the result.
+
+### Docker Deployment
+
+This project can also be run using Docker, which provides easier setup and consistent environments.
+
+#### Prerequisites for Docker
+
+1. Install [Docker](https://docs.docker.com/get-docker/) and [Docker Compose](https://docs.docker.com/compose/install/)
+2. Place Linux-compatible Rhubarb Lip-Sync binaries in the `bin/Rhubarb-Lip-Sync-*-Linux/` directory
+3. Create a `.env` file in the `apps/backend/` directory with your API keys (same as above)
+
+#### Running with Docker Compose
+
+1. Build and start the containers:
+
+```bash
+docker-compose up --build
+```
+
+2. For running in the background:
+
+```bash
+docker-compose up -d
+```
+
+3. To stop the services:
+
+```bash
+docker-compose down
+```
+
+4. To view logs:
+
+```bash
+docker-compose logs -f
+```
+
+The application will be available at:
+- Frontend: http://localhost:5173
+- Backend API: http://localhost:3000
+
+#### Environment Variables in Docker
+
+You can either:
+1. Edit the `.env` file before building the container
+2. Use the built-in settings panel in the UI to update your API keys
 
 ## References
 * How ChatGPT, Bard and other LLMs are signaling an evolution for AI digital humans: https://www.digitalhumans.com/blog/how-chatgpt-bard-and-other-llms-are-signaling-an-evolution-for-ai-digital-humans

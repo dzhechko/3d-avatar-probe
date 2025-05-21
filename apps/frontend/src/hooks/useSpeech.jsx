@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState } from "react";
 
-const backendUrl = "http://localhost:3000";
+// Больше не используем полный URL, так как все обрабатывается через прокси
+// const backendUrl = "http://localhost:3000";
 
 const SpeechContext = createContext();
 
@@ -28,7 +29,7 @@ export const SpeechProvider = ({ children }) => {
       const base64Audio = reader.result.split(",")[1];
       setLoading(true);
       try {
-        const data = await fetch(`${backendUrl}/sts`, {
+        const data = await fetch(`/sts`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -87,7 +88,7 @@ export const SpeechProvider = ({ children }) => {
     setLoading(true);
     try {
       console.log('Sending TTS request to backend');
-      const data = await fetch(`${backendUrl}/tts`, {
+      const data = await fetch(`/tts`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

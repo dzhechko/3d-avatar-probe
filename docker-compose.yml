@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  # Nginx прокси-сервер
+  proxy:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+    volumes:
+      - ./deploy/nginx.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - frontend
+      - backend
+    restart: unless-stopped
+
+  # Бэкенд сервис
+  backend:
+    build:
+      context: ./apps/backend
+    # Не открываем порт 3000 наружу, т.к. доступ через прокси
+    # ports:
+    #  - "3000:3000"
+    env_file:
+      - ./apps/backend/.env
+    volumes:
+      - audios:/usr/src/app/audios
+      - ./bin:/bin
+    restart: unless-stopped
+
+  # Фронтенд сервис
+  frontend:
+    build:
+      context: ./apps/frontend
+    # Не открываем порт 80 наружу, т.к. доступ через прокси
+    # ports:
+    #  - "5173:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+# Определение общих томов
+volumes:
+  audios:
+    # Именованный том для хранения аудиофайлов 

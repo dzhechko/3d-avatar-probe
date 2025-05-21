@@ -5,6 +5,8 @@ import { openAIChain, parser } from "./modules/openAI.mjs";
 import { lipSync } from "./modules/lip-sync.mjs";
 import { sendDefaultMessages, defaultResponse } from "./modules/defaultMessages.mjs";
 import { convertAudioToText } from "./modules/whisper.mjs";
+import fs from 'fs';
+import path from 'path';
 
 dotenv.config();
 
@@ -22,6 +24,80 @@ const port = 3000;
 // Track if greeting was sent
 let greetingSent = false;
 console.log('Server started, greetingSent initialized to:', greetingSent);
+
+// Пути к env файлу
+const envFilePath = path.join(process.cwd(), '.env');
+
+// Путь к бэкапу env файла
+const envBackupPath = path.join(process.cwd(), '.env.backup');
+
+// Эндпоинт для получения переменных окружения
+app.get("/settings/env", (req, res) => {
+  try {
+    // Извлекаем только нужные переменные окружения
+    const envVariables = {
+      OPENAI_MODEL: process.env.OPENAI_MODEL || '',
+      OPENAI_API_KEY: process.env.OPENAI_API_KEY || '',
+      ELEVEN_LABS_API_KEY: process.env.ELEVEN_LABS_API_KEY || '',
+      ELEVEN_LABS_VOICE_ID: process.env.ELEVEN_LABS_VOICE_ID || '',
+      ELEVEN_LABS_MODEL_ID: process.env.ELEVEN_LABS_MODEL_ID || '',
+    };
+    
+    res.json(envVariables);
+  } catch (error) {
+    console.error('Error getting environment variables:', error);
+    res.status(500).json({ error: 'Failed to get environment variables' });
+  }
+});
+
+// Эндпоинт для обновления переменных окружения
+app.post("/settings/env", (req, res) => {
+  try {
+    const { 
+      OPENAI_MODEL, 
+      OPENAI_API_KEY, 
+      ELEVEN_LABS_API_KEY, 
+      ELEVEN_LABS_VOICE_ID, 
+      ELEVEN_LABS_MODEL_ID 
+    } = req.body;
+    
+    // Базовая валидация
+    if (!OPENAI_API_KEY || !ELEVEN_LABS_API_KEY) {
+      return res.status(400).json({ error: 'API keys cannot be empty' });
+    }
+    
+    // Создаём бэкап текущего файла
+    if (fs.existsSync(envFilePath)) {
+      fs.copyFileSync(envFilePath, envBackupPath);
+    }
+    
+    // Формируем содержимое нового .env файла
+    const envContent = `# OPENAI
+OPENAI_MODEL=${OPENAI_MODEL || ''}
+OPENAI_API_KEY=${OPENAI_API_KEY || ''}
+
+# Elevenlabs
+ELEVEN_LABS_API_KEY=${ELEVEN_LABS_API_KEY || ''}
+ELEVEN_LABS_VOICE_ID=${ELEVEN_LABS_VOICE_ID || ''}
+ELEVEN_LABS_MODEL_ID=${ELEVEN_LABS_MODEL_ID || ''}
+`;
+
+    // Записываем новый .env файл
+    fs.writeFileSync(envFilePath, envContent);
+    
+    // Обновляем переменные окружения в текущем процессе
+    process.env.OPENAI_MODEL = OPENAI_MODEL;
+    process.env.OPENAI_API_KEY = OPENAI_API_KEY;
+    process.env.ELEVEN_LABS_API_KEY = ELEVEN_LABS_API_KEY;
+    process.env.ELEVEN_LABS_VOICE_ID = ELEVEN_LABS_VOICE_ID;
+    process.env.ELEVEN_LABS_MODEL_ID = ELEVEN_LABS_MODEL_ID;
+    
+    res.json({ success: true, message: 'Environment variables updated successfully' });
+  } catch (error) {
+    console.error('Error updating environment variables:', error);
+    res.status(500).json({ error: 'Failed to update environment variables' });
+  }
+});
 
 app.post("/tts", async (req, res) => {
   const requestId = Math.random().toString(36).substring(7); // уникальный ID запроса

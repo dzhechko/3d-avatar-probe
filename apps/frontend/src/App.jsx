@@ -3,6 +3,7 @@ import { Canvas } from "@react-three/fiber";
 import { Leva } from "leva";
 import { Scenario } from "./components/Scenario";
 import { ChatInterface } from "./components/ChatInterface";
+import SettingsToggle from "./components/settings/SettingsToggle";
 
 function App() {
   return (
@@ -33,6 +34,9 @@ function App() {
           <Scenario />
         </Canvas>
       </div>
+      
+      {/* Settings Toggle Button */}
+      <SettingsToggle />
     </div>
   );
 }
